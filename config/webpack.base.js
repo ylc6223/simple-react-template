@@ -1,9 +1,13 @@
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
-const ESLintWebpackPlugin = require("eslint-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
-// 定义nodejs环境变量：决定使用browserslist的哪个环境
-process.env.NODE_ENV = 'production';
+const ESLintWebpackPlugin = require("eslint-webpack-plugin");
+const cssRegex = /\.css$/;
+const cssModuleRegex = /\.module\.css$/;
+const sassRegex = /\.(scss|sass)$/;
+const sassModuleRegex = /\.module\.(scss|sass)$/;
+const isProduction = process.env.NODE_ENV === 'production';
+console.log(isProduction)
 module.exports = {
     mode: "development", // 开发模式
     // 构建的起始入口
@@ -39,26 +43,47 @@ module.exports = {
                                 '@babel/preset-env',
                                 {
                                     targets: 'iOS 9, Android 4.4, last 2 versions, > 0.2%, not dead', // 根据项目去配置
-                                    useBuiltIns: 'usage', // 按需加载 会根据配置的目标环境找出需要的polyfill进行部分引入
-                                    corejs: 3, // 使用 core-js@3 版本 需要支持IE浏览器，需要额外配置：core-js
+                                    useBuiltIns: 'usage', // 会根据配置的目标环境找出需要的polyfill进行部分引入
+                                    corejs: 3, // 使用 core-js@3 版本
                                 },
                             ],
                             ['@babel/preset-react'],
                         ],
-                        // 开启babel缓存
-                        cacheDirectory: true
                     }
                 }
             },
             {
-                test: /\.module\.(s[ac]ss|css)$/, // 匹配模块化的 .module.scss 和 .module.css 文件
-                exclude: /node_modules/,
+                test: cssRegex,
+                exclude: cssModuleRegex,
                 use: [
-                    "style-loader",
+                    isProduction ?MiniCssExtractPlugin.loader:"style-loader",
+                    "css-loader",
+                    {
+                        loader: "postcss-loader",
+                        options: {
+                            postcssOptions: {
+                                plugins: [
+                                    "autoprefixer",
+                                    [
+                                        "postcss-preset-env",
+                                        {
+                                            // Options
+                                        },
+                                    ],
+                                ],
+                            },
+                        },
+                    }
+                ],
+            },
+            {
+                test: cssModuleRegex,
+                use: [
+                    isProduction ?MiniCssExtractPlugin.loader:"style-loader",
                     {
                         loader: "css-loader",
                         options: {
-                            importLoaders: 2,
+                            importLoaders: 1,
                             modules: {
                                 localIdentName: "[local]-[hash:base64:4]",
                             },
@@ -69,6 +94,31 @@ module.exports = {
                         options: {
                             postcssOptions: {
                                 plugins: [
+                                    "autoprefixer",
+                                    [
+                                        "postcss-preset-env",
+                                        {
+                                            // Options
+                                        },
+                                    ],
+                                ],
+                            },
+                        },
+                    }
+                ],
+            },
+            {
+                test: sassRegex,
+                exclude: sassModuleRegex,
+                use: [
+                    isProduction ?MiniCssExtractPlugin.loader:"style-loader",
+                    "css-loader",
+                    {
+                        loader: "postcss-loader",
+                        options: {
+                            postcssOptions: {
+                                plugins: [
+                                    "autoprefixer",
                                     [
                                         "postcss-preset-env",
                                         {
@@ -83,16 +133,24 @@ module.exports = {
                 ],
             },
             {
-                test: /\.(s[ac]ss|css)$/, // 匹配普通的 .scss 和 .css 文件
-                exclude: [/node_modules/, /\.module\.(s[ac]ss|css)$/], // 排除模块化的 .module.scss 和 .module.css 文件
+                test: sassModuleRegex,
                 use: [
-                    "style-loader",
-                    "css-loader",
+                    isProduction ?MiniCssExtractPlugin.loader:"style-loader",
+                    {
+                        loader: "css-loader",
+                        options: {
+                            importLoaders: 2,
+                            modules: {
+                                localIdentName: "[local]-[hash:base64:4]",
+                            },
+                        }
+                    },
                     {
                         loader: "postcss-loader",
                         options: {
                             postcssOptions: {
                                 plugins: [
+                                    "autoprefixer",
                                     [
                                         "postcss-preset-env",
                                         {
@@ -111,29 +169,29 @@ module.exports = {
                 type: "asset",
                 parser: {
                     dataUrlCondition: {
-                        // 小于 maxSize 的会被打包成 base64，否则会被打包到目录，以url的形式引入
                         maxSize: 10 * 1024, // 小于10kb转base64位
                     }
                 },
                 generator: {
-                    filename: 'assets/fonts/[name].[contenthash:6][ext]', // 文件输出目录和命名
+                    filename: 'static/fonts/[name].[contenthash:6][ext]', // 文件输出目录和命名
                 },
             },
             {
                 test: /\.(png|jpe?g|gif|webp|svg)$/,
+                exclude: /node_modules/,
                 type: "asset",//文件转化成 Webpack 能识别的资源，同时小于某个大小的资源会处理成 data URI 形式
                 parser: {
                     dataUrlCondition: {
-                        maxSize: 25 * 1024, // 小于10kb的图片会被base64处理
+                        maxSize: 10 * 1024, // 小于10kb的图片会被base64处理
                     },
                 },
                 generator: {
-                    // 将图片文件输出到 assets/imgs 目录中
+                    // 将图片文件输出到 static/imgs 目录中
                     // 将图片文件命名 [hash:8][ext][query]
                     // [hash:8]: hash值取8位
                     // [ext]: 使用之前的文件扩展名
                     // [query]: 添加之前的query参数
-                    filename: "assets/imgs/[hash:8][ext][query]",
+                    filename: "static/imgs/[hash:8][ext][query]",
                 },
             },
             {
@@ -145,7 +203,7 @@ module.exports = {
                     }
                 },
                 generator: {
-                    filename: 'assets/media/[name].[contenthash:6][ext]', // 文件输出目录和命名
+                    filename: 'static/media/[name].[contenthash:6][ext]', // 文件输出目录和命名
                 },
             },
         ]
@@ -153,9 +211,18 @@ module.exports = {
     // 打包过程中添加额外的功能。比如打包优化，资源管理，注入环境变量等。
     plugins: [
         new HtmlWebpackPlugin({
-            // title 配置
             title: "Webpack V5 + React",
+            inject: true,
+            minify: {
+                minifyCSS: false, // 是否压缩css
+                collapseWhitespace: false, // 是否折叠空格
+                removeComments: true, // 是否移除注释
+            },
+            favicon: path.resolve(__dirname,"../public/favicon.ico"),
             template: path.resolve(__dirname, "../public/index.html"),
+        }),
+        new MiniCssExtractPlugin({
+            filename: 'assets/css/[hash:8].css', // 将css单独提测出来放在assets/css 下
         }),
         new ESLintWebpackPlugin({
             fix: true, // 启用 ESLint 自动修复特性
