@@ -8,6 +8,7 @@
     "watch": "webpack --watch",
     "build": "cross-env NODE_ENV=production webpack -c config/webpack.prod.js",
     "dev": "cross-env NODE_ENV=development webpack serve -c config/webpack.dev.js",
+    "lint": "eslint --fix",
     "prepare": "husky install",
     "commit": "git-cz"
   },
