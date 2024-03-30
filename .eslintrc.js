@@ -1,7 +1,8 @@
+const path = require('path');
 module.exports = {
   root: true,
   extends: ['react-app', 'prettier'],
-  plugins: ['prettier'],
+  plugins: ['react', 'prettier'],
   env: {
     node: true, // 启用node中全局变量
     browser: true // 启用浏览器中全局变量
@@ -22,7 +23,7 @@ module.exports = {
     quotes: ['error', 'single'],
     'prettier/prettier': 'error',
     'no-console': 'error',
-    'simple-import-sort/imports': 'error',
+    // 'simple-import-sort/imports': 'error',
     'no-duplicate-imports': 'error',
     'no-unused-vars': [
       'error',
